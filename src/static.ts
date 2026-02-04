@@ -48,6 +48,7 @@ export const HTML = `<!DOCTYPE html>
     </nav>
 
     <main>
+      <div id="viewDescription" class="view-description"></div>
       <div id="chartContainer">
         <div id="chart"></div>
         <div id="legend"></div>
@@ -326,6 +327,22 @@ footer a:hover {
   border-left: 2px solid var(--accent-red);
 }
 
+.view-description {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.view-description strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
 .loading {
   display: flex;
   align-items: center;
@@ -403,6 +420,16 @@ let markers = null;
 let dateRange = { start: null, end: null };
 
 const VALID_VIEWS = ['corridor', 'sofr-percentile', 'sofr-bands', 'sofr-rrp', 'effr-rrp', 'rrp-volume', 'sofr-volume'];
+
+const VIEW_DESCRIPTIONS = {
+  'corridor': '<strong>Rate Corridor</strong> \u2014 The full Fed rate framework. SOFR and EFFR are plotted between the Standing Repo Facility rate (ceiling) and the Overnight Reverse Repo rate (floor), with Interest on Reserve Balances (IORB) in between. When market rates drift toward the ceiling or floor, it signals stress or excess liquidity in the funding markets.',
+  'sofr-percentile': '<strong>SOFR 1st\u201399th Percentile Spread</strong> \u2014 The gap between the highest and lowest transaction rates each day. A narrow spread means most repo trades are pricing similarly. Spikes typically occur at quarter-ends (balance sheet constraints) and tax deadlines (cash drains), when some participants are forced to accept worse rates.',
+  'sofr-bands': '<strong>SOFR Percentile Bands</strong> \u2014 The full distribution of daily SOFR transaction rates. The outer band (P1\u2013P99) captures nearly all activity; the inner band (P25\u2013P75) shows where the bulk of volume trades. Wider bands signal dispersion or stress in the repo market; tight bands indicate orderly conditions.',
+  'sofr-rrp': '<strong>SOFR \u2212 RRP Spread</strong> \u2014 How far the secured overnight rate (SOFR) sits above the Fed\\'s ON RRP facility rate, which acts as the effective floor for overnight funding. A rising spread suggests increased demand for repo funding or reduced excess liquidity. A spread near zero means cash is abundant and the floor is binding.',
+  'effr-rrp': '<strong>EFFR \u2212 RRP Spread</strong> \u2014 How far the unsecured overnight rate (EFFR) sits above the ON RRP floor. Since EFFR reflects interbank lending (unsecured), this spread indicates credit and liquidity conditions beyond just the repo market. Widening can signal tighter reserve conditions across the banking system.',
+  'rrp-volume': '<strong>ON RRP Take-Up</strong> \u2014 Total daily cash parked at the Fed\\'s Overnight Reverse Repo facility. High volumes mean excess cash is seeking safe overnight returns at the Fed. Declining balances suggest liquidity is being absorbed elsewhere\u2014by Treasury bill issuance, bank reserves, or other investments\u2014which can precede tighter funding conditions.',
+  'sofr-volume': '<strong>SOFR Transaction Volume</strong> \u2014 The total daily dollar volume of overnight Treasury repo transactions underlying SOFR. Reflects overall market activity in secured overnight funding. Dips may occur around holidays or settlement days. Sustained changes can indicate shifts in market structure or participant behavior.',
+};
 
 function getViewFromPath() {
   var path = window.location.pathname.replace(/^\\//, '');
@@ -519,6 +546,8 @@ function renderChart() {
   legendContainer.innerHTML = '';
   series = [];
 
+  document.getElementById('viewDescription').innerHTML = VIEW_DESCRIPTIONS[currentView] || '';
+
   if (!cachedData) {
     container.innerHTML = '<div class="loading">Loading data</div>';
     return;
@@ -565,23 +594,23 @@ function renderChart() {
 function renderCorridorChart() {
   const { sofr, effr, policy } = cachedData;
 
-  const sofrSeries = chart.addLineSeries({ color: COLORS.sofr, lineWidth: 2, title: 'SOFR', lastValueVisible: false, priceLineVisible: false });
+  const sofrSeries = chart.addLineSeries({ color: COLORS.sofr, lineWidth: 2, lastValueVisible: false, priceLineVisible: false });
   sofrSeries.setData(sofr.map((d) => ({ time: d.date, value: d.rate })));
   series.push({ name: 'SOFR', color: COLORS.sofr });
 
-  const effrSeries = chart.addLineSeries({ color: COLORS.effr, lineWidth: 2, title: 'EFFR', lastValueVisible: false, priceLineVisible: false });
+  const effrSeries = chart.addLineSeries({ color: COLORS.effr, lineWidth: 2, lastValueVisible: false, priceLineVisible: false });
   effrSeries.setData(effr.map((d) => ({ time: d.date, value: d.rate })));
   series.push({ name: 'EFFR', color: COLORS.effr });
 
-  const iorbSeries = chart.addLineSeries({ color: COLORS.iorb, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, title: 'IORB', lastValueVisible: false, priceLineVisible: false });
+  const iorbSeries = chart.addLineSeries({ color: COLORS.iorb, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, lastValueVisible: false, priceLineVisible: false });
   iorbSeries.setData(policy.filter((d) => d.iorb !== null).map((d) => ({ time: d.date, value: d.iorb })));
   series.push({ name: 'IORB', color: COLORS.iorb });
 
-  const srfSeries = chart.addLineSeries({ color: COLORS.srf, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: 'SRF (Ceiling)', lastValueVisible: false, priceLineVisible: false });
+  const srfSeries = chart.addLineSeries({ color: COLORS.srf, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, lastValueVisible: false, priceLineVisible: false });
   srfSeries.setData(policy.filter((d) => d.srf !== null).map((d) => ({ time: d.date, value: d.srf })));
   series.push({ name: 'SRF (Ceiling)', color: COLORS.srf });
 
-  const rrpSeries = chart.addLineSeries({ color: COLORS.rrp, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: 'RRP (Floor)', lastValueVisible: false, priceLineVisible: false });
+  const rrpSeries = chart.addLineSeries({ color: COLORS.rrp, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, lastValueVisible: false, priceLineVisible: false });
   rrpSeries.setData(policy.filter((d) => d.rrp !== null).map((d) => ({ time: d.date, value: d.rrp })));
   series.push({ name: 'RRP (Floor)', color: COLORS.rrp });
 
@@ -594,7 +623,7 @@ async function renderSpreadChart(type, title) {
     const res = await fetch(API_BASE + '/api/spreads?type=' + type + '&start=' + dateRange.start + '&end=' + dateRange.end);
     const data = await res.json();
 
-    const spreadSeries = chart.addLineSeries({ color: COLORS.spread, lineWidth: 2, title: title, lastValueVisible: false, priceLineVisible: false });
+    const spreadSeries = chart.addLineSeries({ color: COLORS.spread, lineWidth: 2, lastValueVisible: false, priceLineVisible: false });
     spreadSeries.setData(data.map((d) => ({ time: d.date, value: d.value })));
     series.push({ name: title, color: COLORS.spread });
 
@@ -625,7 +654,7 @@ function renderBandsChart() {
   const p25Series = chart.addAreaSeries({ topColor: 'transparent', bottomColor: COLORS.p25, lineColor: 'transparent', lineWidth: 0, invertFilledArea: true, lastValueVisible: false, priceLineVisible: false });
   p25Series.setData(sofr.filter((d) => d.p25 !== null).map((d) => ({ time: d.date, value: d.p25 })));
 
-  const medianSeries = chart.addLineSeries({ color: COLORS.sofr, lineWidth: 2, title: 'SOFR', lastValueVisible: false, priceLineVisible: false });
+  const medianSeries = chart.addLineSeries({ color: COLORS.sofr, lineWidth: 2, lastValueVisible: false, priceLineVisible: false });
   medianSeries.setData(sofr.map((d) => ({ time: d.date, value: d.rate })));
 
   series.push({ name: 'SOFR (Median)', color: COLORS.sofr }, { name: 'P25-P75', color: 'rgba(41, 98, 255, 0.4)' }, { name: 'P1-P99', color: 'rgba(41, 98, 255, 0.2)' });

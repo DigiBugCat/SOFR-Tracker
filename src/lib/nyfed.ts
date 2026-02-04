@@ -19,15 +19,20 @@ interface NyFedResponse {
   refRates: NyFedRateObservation[];
 }
 
+interface RrpProposition {
+  counterpartyType: string;
+  amtAccepted: number;
+}
+
 interface RrpOperationResult {
   operationDate: string;
   totalAmtAccepted?: number;
-  totalCounterpartyCount?: number;
+  propositions?: RrpProposition[];
 }
 
 interface RrpResponse {
-  repoOperations?: {
-    results: RrpOperationResult[];
+  repo?: {
+    operations: RrpOperationResult[];
   };
 }
 
@@ -120,15 +125,26 @@ export async function fetchRrpOperations(startDate: string, endDate: string): Pr
   }
 
   const data = (await response.json()) as RrpResponse;
-  const results = data.repoOperations?.results || [];
+  const results = data.repo?.operations || [];
 
-  return results.map((op) => ({
-    date: op.operationDate,
-    total_accepted_billions: op.totalAmtAccepted
-      ? op.totalAmtAccepted / 1_000_000_000
-      : null,
-    participating_counterparties: op.totalCounterpartyCount ?? null,
-    mmf_accepted_billions: null,
-    gse_accepted_billions: null,
-  }));
+  return results.map((op) => {
+    const props = op.propositions || [];
+    const mmf = props.find((p) => p.counterpartyType === 'mmf');
+    const gse = props.find((p) => p.counterpartyType === 'gse');
+    const counterparties = props.filter((p) => p.amtAccepted > 0).length;
+
+    return {
+      date: op.operationDate,
+      total_accepted_billions: op.totalAmtAccepted != null
+        ? op.totalAmtAccepted / 1_000_000_000
+        : null,
+      participating_counterparties: counterparties || null,
+      mmf_accepted_billions: mmf
+        ? mmf.amtAccepted / 1_000_000_000
+        : null,
+      gse_accepted_billions: gse
+        ? gse.amtAccepted / 1_000_000_000
+        : null,
+    };
+  });
 }

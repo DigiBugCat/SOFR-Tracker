@@ -2,6 +2,11 @@ name = "sofr-tracker"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
+# Custom domain - sofr.nekokeys.com
+routes = [
+  { pattern = "sofr.nekokeys.com", custom_domain = true }
+]
+
 [triggers]
 crons = ["0 11 * * 1-5"]  # 6am ET (11:00 UTC) weekdays
 
@@ -9,11 +14,6 @@ crons = ["0 11 * * 1-5"]  # 6am ET (11:00 UTC) weekdays
 binding = "DB"
 database_name = "sofr-tracker-db"
 database_id = "df60cbab-23e5-4d90-bf23-a229b97ff270"
-
-# Custom domain - sofr.nekokeys.com
-routes = [
-  { pattern = "sofr.nekokeys.com", custom_domain = true }
-]
 
 [vars]
 ENVIRONMENT = "production"

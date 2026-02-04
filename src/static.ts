@@ -540,14 +540,19 @@ function renderChart() {
     timeScale: { borderColor: '#363a45', timeVisible: false },
   });
 
+  var viewPromise;
   switch (currentView) {
     case 'corridor': renderCorridorChart(); break;
-    case 'sofr-percentile': renderSpreadChart('sofr-percentile', 'SOFR 1st-99th Percentile Spread'); break;
+    case 'sofr-percentile': viewPromise = renderSpreadChart('sofr-percentile', 'SOFR 1st-99th Percentile Spread'); break;
     case 'sofr-bands': renderBandsChart(); break;
-    case 'sofr-rrp': renderSpreadChart('sofr-rrp', 'SOFR - RRP Spread'); break;
-    case 'effr-rrp': renderSpreadChart('effr-rrp', 'EFFR - RRP Spread'); break;
-    case 'rrp-volume': renderVolumeChart('rrp'); break;
-    case 'sofr-volume': renderVolumeChart('sofr'); break;
+    case 'sofr-rrp': viewPromise = renderSpreadChart('sofr-rrp', 'SOFR - RRP Spread'); break;
+    case 'effr-rrp': viewPromise = renderSpreadChart('effr-rrp', 'EFFR - RRP Spread'); break;
+    case 'rrp-volume': viewPromise = renderVolumeChart('rrp'); break;
+    case 'sofr-volume': viewPromise = renderVolumeChart('sofr'); break;
+  }
+
+  if (viewPromise) {
+    viewPromise.then(function() { chart.timeScale().fitContent(); });
   }
 
   window.addEventListener('resize', () => {
@@ -580,6 +585,7 @@ function renderCorridorChart() {
   rrpSeries.setData(policy.filter((d) => d.rrp !== null).map((d) => ({ time: d.date, value: d.rrp })));
   series.push({ name: 'RRP (Floor)', color: COLORS.rrp });
 
+  addEventMarkers(sofrSeries, sofr.map((d) => d.date));
   renderLegend();
 }
 
@@ -597,6 +603,7 @@ async function renderSpreadChart(type, title) {
       zeroLine.setData([{ time: data[0].date, value: 0 }, { time: data[data.length - 1].date, value: 0 }]);
     }
 
+    addEventMarkers(spreadSeries, data.map((d) => d.date));
     renderLegend();
   } catch (err) {
     console.error('Error loading spread data:', err);
@@ -622,6 +629,7 @@ function renderBandsChart() {
   medianSeries.setData(sofr.map((d) => ({ time: d.date, value: d.rate })));
 
   series.push({ name: 'SOFR (Median)', color: COLORS.sofr }, { name: 'P25-P75', color: 'rgba(41, 98, 255, 0.4)' }, { name: 'P1-P99', color: 'rgba(41, 98, 255, 0.2)' });
+  addEventMarkers(medianSeries, sofr.map((d) => d.date));
   renderLegend();
 }
 
@@ -645,7 +653,48 @@ async function renderVolumeChart(type) {
   const volumeSeries = chart.addHistogramSeries({ color: color, priceFormat: { type: 'volume' } });
   volumeSeries.setData(data);
   series.push({ name: title, color: color });
+  addEventMarkers(volumeSeries, data.map((d) => d.time));
   renderLegend();
+}
+
+function addEventMarkers(targetSeries, dataDates) {
+  if (!markers || !targetSeries || !dataDates || dataDates.length === 0) return;
+
+  var dateSet = {};
+  dataDates.forEach(function(d) { dateSet[d] = true; });
+  var sorted = dataDates.slice().sort();
+
+  function findClosest(target) {
+    if (dateSet[target]) return target;
+    for (var i = sorted.length - 1; i >= 0; i--) {
+      if (sorted[i] <= target) return sorted[i];
+    }
+    return null;
+  }
+
+  var seen = {};
+  var all = [];
+
+  markers.quarterEnds.forEach(function(d) {
+    if (d < dateRange.start || d > dateRange.end) return;
+    var closest = findClosest(d);
+    if (closest && !seen[closest + 'qe']) {
+      seen[closest + 'qe'] = true;
+      all.push({ time: closest, position: 'aboveBar', color: '#ff9800', shape: 'square', text: 'QE' });
+    }
+  });
+
+  markers.taxDeadlines.forEach(function(d) {
+    if (d < dateRange.start || d > dateRange.end) return;
+    var closest = findClosest(d);
+    if (closest && !seen[closest + 'tx']) {
+      seen[closest + 'tx'] = true;
+      all.push({ time: closest, position: 'aboveBar', color: '#ef5350', shape: 'square', text: 'Tax' });
+    }
+  });
+
+  all.sort(function(a, b) { return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
+  targetSeries.setMarkers(all);
 }
 
 function renderLegend() {

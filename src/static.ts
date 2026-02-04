@@ -565,23 +565,23 @@ function renderChart() {
 function renderCorridorChart() {
   const { sofr, effr, policy } = cachedData;
 
-  const sofrSeries = chart.addLineSeries({ color: COLORS.sofr, lineWidth: 2, title: 'SOFR' });
+  const sofrSeries = chart.addLineSeries({ color: COLORS.sofr, lineWidth: 2, title: 'SOFR', lastValueVisible: false, priceLineVisible: false });
   sofrSeries.setData(sofr.map((d) => ({ time: d.date, value: d.rate })));
   series.push({ name: 'SOFR', color: COLORS.sofr });
 
-  const effrSeries = chart.addLineSeries({ color: COLORS.effr, lineWidth: 2, title: 'EFFR' });
+  const effrSeries = chart.addLineSeries({ color: COLORS.effr, lineWidth: 2, title: 'EFFR', lastValueVisible: false, priceLineVisible: false });
   effrSeries.setData(effr.map((d) => ({ time: d.date, value: d.rate })));
   series.push({ name: 'EFFR', color: COLORS.effr });
 
-  const iorbSeries = chart.addLineSeries({ color: COLORS.iorb, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, title: 'IORB' });
+  const iorbSeries = chart.addLineSeries({ color: COLORS.iorb, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, title: 'IORB', lastValueVisible: false, priceLineVisible: false });
   iorbSeries.setData(policy.filter((d) => d.iorb !== null).map((d) => ({ time: d.date, value: d.iorb })));
   series.push({ name: 'IORB', color: COLORS.iorb });
 
-  const srfSeries = chart.addLineSeries({ color: COLORS.srf, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: 'SRF (Ceiling)' });
+  const srfSeries = chart.addLineSeries({ color: COLORS.srf, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: 'SRF (Ceiling)', lastValueVisible: false, priceLineVisible: false });
   srfSeries.setData(policy.filter((d) => d.srf !== null).map((d) => ({ time: d.date, value: d.srf })));
   series.push({ name: 'SRF (Ceiling)', color: COLORS.srf });
 
-  const rrpSeries = chart.addLineSeries({ color: COLORS.rrp, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: 'RRP (Floor)' });
+  const rrpSeries = chart.addLineSeries({ color: COLORS.rrp, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: 'RRP (Floor)', lastValueVisible: false, priceLineVisible: false });
   rrpSeries.setData(policy.filter((d) => d.rrp !== null).map((d) => ({ time: d.date, value: d.rrp })));
   series.push({ name: 'RRP (Floor)', color: COLORS.rrp });
 
@@ -594,7 +594,7 @@ async function renderSpreadChart(type, title) {
     const res = await fetch(API_BASE + '/api/spreads?type=' + type + '&start=' + dateRange.start + '&end=' + dateRange.end);
     const data = await res.json();
 
-    const spreadSeries = chart.addLineSeries({ color: COLORS.spread, lineWidth: 2, title: title });
+    const spreadSeries = chart.addLineSeries({ color: COLORS.spread, lineWidth: 2, title: title, lastValueVisible: false, priceLineVisible: false });
     spreadSeries.setData(data.map((d) => ({ time: d.date, value: d.value })));
     series.push({ name: title, color: COLORS.spread });
 
@@ -613,19 +613,19 @@ async function renderSpreadChart(type, title) {
 function renderBandsChart() {
   const { sofr } = cachedData;
 
-  const p99Series = chart.addAreaSeries({ topColor: COLORS.p99, bottomColor: 'transparent', lineColor: 'transparent', lineWidth: 0 });
+  const p99Series = chart.addAreaSeries({ topColor: COLORS.p99, bottomColor: 'transparent', lineColor: 'transparent', lineWidth: 0, lastValueVisible: false, priceLineVisible: false });
   p99Series.setData(sofr.filter((d) => d.p99 !== null).map((d) => ({ time: d.date, value: d.p99 })));
 
-  const p1Series = chart.addAreaSeries({ topColor: 'transparent', bottomColor: COLORS.p1, lineColor: 'transparent', lineWidth: 0, invertFilledArea: true });
+  const p1Series = chart.addAreaSeries({ topColor: 'transparent', bottomColor: COLORS.p1, lineColor: 'transparent', lineWidth: 0, invertFilledArea: true, lastValueVisible: false, priceLineVisible: false });
   p1Series.setData(sofr.filter((d) => d.p1 !== null).map((d) => ({ time: d.date, value: d.p1 })));
 
-  const p75Series = chart.addAreaSeries({ topColor: COLORS.p75, bottomColor: 'transparent', lineColor: 'transparent', lineWidth: 0 });
+  const p75Series = chart.addAreaSeries({ topColor: COLORS.p75, bottomColor: 'transparent', lineColor: 'transparent', lineWidth: 0, lastValueVisible: false, priceLineVisible: false });
   p75Series.setData(sofr.filter((d) => d.p75 !== null).map((d) => ({ time: d.date, value: d.p75 })));
 
-  const p25Series = chart.addAreaSeries({ topColor: 'transparent', bottomColor: COLORS.p25, lineColor: 'transparent', lineWidth: 0, invertFilledArea: true });
+  const p25Series = chart.addAreaSeries({ topColor: 'transparent', bottomColor: COLORS.p25, lineColor: 'transparent', lineWidth: 0, invertFilledArea: true, lastValueVisible: false, priceLineVisible: false });
   p25Series.setData(sofr.filter((d) => d.p25 !== null).map((d) => ({ time: d.date, value: d.p25 })));
 
-  const medianSeries = chart.addLineSeries({ color: COLORS.sofr, lineWidth: 2, title: 'SOFR' });
+  const medianSeries = chart.addLineSeries({ color: COLORS.sofr, lineWidth: 2, title: 'SOFR', lastValueVisible: false, priceLineVisible: false });
   medianSeries.setData(sofr.map((d) => ({ time: d.date, value: d.rate })));
 
   series.push({ name: 'SOFR (Median)', color: COLORS.sofr }, { name: 'P25-P75', color: 'rgba(41, 98, 255, 0.4)' }, { name: 'P1-P99', color: 'rgba(41, 98, 255, 0.2)' });
@@ -650,7 +650,7 @@ async function renderVolumeChart(type) {
     color = COLORS.volume;
   }
 
-  const volumeSeries = chart.addHistogramSeries({ color: color, priceFormat: { type: 'volume' } });
+  const volumeSeries = chart.addHistogramSeries({ color: color, priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false });
   volumeSeries.setData(data);
   series.push({ name: title, color: color });
   addEventMarkers(volumeSeries, data.map((d) => d.time));

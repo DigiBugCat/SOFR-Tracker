@@ -64,8 +64,8 @@ export async function fetchSrf(startDate: string, endDate: string): Promise<Fred
 }
 
 export async function fetchRrpRate(startDate: string, endDate: string): Promise<FredDataPoint[]> {
-  // Overnight Reverse Repo rate
-  return fetchFredSeries('RRPONTSYD', startDate, endDate);
+  // Overnight Reverse Repo award rate (in percent, e.g. 4.25)
+  return fetchFredSeries('RRPONTSYAWARD', startDate, endDate);
 }
 
 export async function fetchPolicyRates(

@@ -16,6 +16,15 @@ const VIEWS = new Set([
   'sofr-rrp', 'effr-rrp', 'rrp-volume', 'sofr-volume',
 ]);
 
+// Static assets (must be before /:view catch-all)
+app.get('/styles.css', (c) => {
+  return c.text(CSS, 200, { 'Content-Type': 'text/css' });
+});
+
+app.get('/charts.js', (c) => {
+  return c.text(JS, 200, { 'Content-Type': 'application/javascript' });
+});
+
 // Serve dashboard for / and all view paths
 app.get('/', (c) => {
   return c.html(HTML);
@@ -27,14 +36,6 @@ app.get('/:view', (c) => {
     return c.html(HTML);
   }
   return c.notFound();
-});
-
-app.get('/styles.css', (c) => {
-  return c.text(CSS, 200, { 'Content-Type': 'text/css' });
-});
-
-app.get('/charts.js', (c) => {
-  return c.text(JS, 200, { 'Content-Type': 'application/javascript' });
 });
 
 // Get rates with date range

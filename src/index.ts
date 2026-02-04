@@ -2,16 +2,25 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { runSync, backfill } from './sync';
+import { HTML, CSS, JS } from './static';
 import type { Env, SofrRate, EffrRate, PolicyRate, RrpOperation } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Enable CORS for frontend
-app.use('*', cors());
+// Enable CORS for API routes
+app.use('/api/*', cors());
 
-// Health check
+// Serve static assets
 app.get('/', (c) => {
-  return c.json({ status: 'ok', service: 'sofr-tracker' });
+  return c.html(HTML);
+});
+
+app.get('/styles.css', (c) => {
+  return c.text(CSS, 200, { 'Content-Type': 'text/css' });
+});
+
+app.get('/charts.js', (c) => {
+  return c.text(JS, 200, { 'Content-Type': 'application/javascript' });
 });
 
 // Get rates with date range
@@ -47,7 +56,6 @@ app.get('/api/spreads', async (c) => {
   let query: string;
   switch (type) {
     case 'sofr-percentile':
-      // SOFR 1st-99th percentile spread
       query = `
         SELECT date, (p99 - p1) as value
         FROM sofr_rates
@@ -56,7 +64,6 @@ app.get('/api/spreads', async (c) => {
       `;
       break;
     case 'sofr-rrp':
-      // SOFR - RRP spread
       query = `
         SELECT s.date, (s.rate - p.rrp) as value
         FROM sofr_rates s
@@ -66,7 +73,6 @@ app.get('/api/spreads', async (c) => {
       `;
       break;
     case 'effr-rrp':
-      // EFFR - RRP spread
       query = `
         SELECT e.date, (e.rate - p.rrp) as value
         FROM effr_rates e
@@ -134,14 +140,14 @@ app.get('/api/markers', (c) => {
   return c.json({ quarterEnds, taxDeadlines });
 });
 
-// Manual sync trigger (protected in production)
+// Manual sync trigger
 app.post('/api/sync', async (c) => {
   const lookback = parseInt(c.req.query('days') || '7');
   const result = await runSync(c.env, lookback);
   return c.json(result);
 });
 
-// Backfill endpoint (protected in production)
+// Backfill endpoint
 app.post('/api/backfill', async (c) => {
   const start = c.req.query('start');
   const end = c.req.query('end') || getToday();
@@ -192,7 +198,7 @@ function getToday(): string {
 
 function getDefaultStartDate(): string {
   const date = new Date();
-  date.setMonth(date.getMonth() - 3); // Default to 3 months back
+  date.setMonth(date.getMonth() - 3);
   return date.toISOString().split('T')[0];
 }
 

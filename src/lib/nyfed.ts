@@ -4,14 +4,15 @@ const NY_FED_BASE = 'https://markets.newyorkfed.org';
 
 interface NyFedRateObservation {
   effectiveDate: string;
-  percentile1?: string;
-  percentile25?: string;
-  percentile75?: string;
-  percentile99?: string;
-  targetRateLow?: string;
-  targetRateHigh?: string;
-  rateType?: string;
-  [key: string]: string | undefined;
+  type: string;
+  percentRate: number;
+  percentPercentile1?: number;
+  percentPercentile25?: number;
+  percentPercentile75?: number;
+  percentPercentile99?: number;
+  targetRateFrom?: number;
+  targetRateTo?: number;
+  volumeInBillions?: number;
 }
 
 interface NyFedResponse {
@@ -22,10 +23,6 @@ interface RrpOperationResult {
   operationDate: string;
   totalAmtAccepted?: number;
   totalCounterpartyCount?: number;
-  submittedParticipantsByType?: {
-    participantType: string;
-    totalAmtAccepted?: number;
-  }[];
 }
 
 interface RrpResponse {
@@ -64,12 +61,6 @@ export interface RrpData {
   gse_accepted_billions: number | null;
 }
 
-function parseRate(value: string | undefined): number | null {
-  if (!value || value === '') return null;
-  const num = parseFloat(value);
-  return isNaN(num) ? null : num;
-}
-
 export async function fetchSofr(startDate: string, endDate: string): Promise<SofrData[]> {
   const url = new URL(`${NY_FED_BASE}/api/rates/secured/sofr/search.json`);
   url.searchParams.set('startDate', startDate);
@@ -84,14 +75,12 @@ export async function fetchSofr(startDate: string, endDate: string): Promise<Sof
 
   return (data.refRates || []).map((obs) => ({
     date: obs.effectiveDate,
-    rate: parseRate(obs.percentile50 || obs.rateType) ?? 0,
-    p1: parseRate(obs.percentile1),
-    p25: parseRate(obs.percentile25),
-    p75: parseRate(obs.percentile75),
-    p99: parseRate(obs.percentile99),
-    volume_billions: parseRate(obs.tradingVolume)
-      ? parseRate(obs.tradingVolume)! / 1_000_000_000
-      : null,
+    rate: obs.percentRate ?? 0,
+    p1: obs.percentPercentile1 ?? null,
+    p25: obs.percentPercentile25 ?? null,
+    p75: obs.percentPercentile75 ?? null,
+    p99: obs.percentPercentile99 ?? null,
+    volume_billions: obs.volumeInBillions ?? null,
   }));
 }
 
@@ -109,21 +98,19 @@ export async function fetchEffr(startDate: string, endDate: string): Promise<Eff
 
   return (data.refRates || []).map((obs) => ({
     date: obs.effectiveDate,
-    rate: parseRate(obs.percentile50 || obs.rateType) ?? 0,
-    p1: parseRate(obs.percentile1),
-    p25: parseRate(obs.percentile25),
-    p75: parseRate(obs.percentile75),
-    p99: parseRate(obs.percentile99),
-    target_low: parseRate(obs.targetRateLow),
-    target_high: parseRate(obs.targetRateHigh),
-    volume_billions: parseRate(obs.tradingVolume)
-      ? parseRate(obs.tradingVolume)! / 1_000_000_000
-      : null,
+    rate: obs.percentRate ?? 0,
+    p1: obs.percentPercentile1 ?? null,
+    p25: obs.percentPercentile25 ?? null,
+    p75: obs.percentPercentile75 ?? null,
+    p99: obs.percentPercentile99 ?? null,
+    target_low: obs.targetRateFrom ?? null,
+    target_high: obs.targetRateTo ?? null,
+    volume_billions: obs.volumeInBillions ?? null,
   }));
 }
 
 export async function fetchRrpOperations(startDate: string, endDate: string): Promise<RrpData[]> {
-  const url = new URL(`${NY_FED_BASE}/api/rp/reverserepo/all/results/search.json`);
+  const url = new URL(`${NY_FED_BASE}/api/rp/reverserepo/propositions/search.json`);
   url.searchParams.set('startDate', startDate);
   url.searchParams.set('endDate', endDate);
 
@@ -135,23 +122,13 @@ export async function fetchRrpOperations(startDate: string, endDate: string): Pr
   const data = (await response.json()) as RrpResponse;
   const results = data.repoOperations?.results || [];
 
-  return results.map((op) => {
-    const participants = op.submittedParticipantsByType || [];
-    const mmf = participants.find((p) => p.participantType === 'Money Market Fund');
-    const gse = participants.find((p) => p.participantType === 'GSE');
-
-    return {
-      date: op.operationDate,
-      total_accepted_billions: op.totalAmtAccepted
-        ? op.totalAmtAccepted / 1_000_000_000
-        : null,
-      participating_counterparties: op.totalCounterpartyCount ?? null,
-      mmf_accepted_billions: mmf?.totalAmtAccepted
-        ? mmf.totalAmtAccepted / 1_000_000_000
-        : null,
-      gse_accepted_billions: gse?.totalAmtAccepted
-        ? gse.totalAmtAccepted / 1_000_000_000
-        : null,
-    };
-  });
+  return results.map((op) => ({
+    date: op.operationDate,
+    total_accepted_billions: op.totalAmtAccepted
+      ? op.totalAmtAccepted / 1_000_000_000
+      : null,
+    participating_counterparties: op.totalCounterpartyCount ?? null,
+    mmf_accepted_billions: null,
+    gse_accepted_billions: null,
+  }));
 }

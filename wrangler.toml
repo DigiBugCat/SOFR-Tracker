@@ -8,16 +8,12 @@ crons = ["0 11 * * 1-5"]  # 6am ET (11:00 UTC) weekdays
 [[d1_databases]]
 binding = "DB"
 database_name = "sofr-tracker-db"
-database_id = "placeholder-will-be-replaced-after-creation"
+database_id = "df60cbab-23e5-4d90-bf23-a229b97ff270"
+
+# Custom domain - sofr.nekokeys.com
+routes = [
+  { pattern = "sofr.nekokeys.com", custom_domain = true }
+]
 
 [vars]
 ENVIRONMENT = "production"
-
-# Local development
-[env.dev]
-name = "sofr-tracker-dev"
-
-[[env.dev.d1_databases]]
-binding = "DB"
-database_name = "sofr-tracker-db"
-database_id = "placeholder-will-be-replaced-after-creation"

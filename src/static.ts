@@ -402,10 +402,35 @@ let cachedData = null;
 let markers = null;
 let dateRange = { start: null, end: null };
 
+const VALID_VIEWS = ['corridor', 'sofr-percentile', 'sofr-bands', 'sofr-rrp', 'effr-rrp', 'rrp-volume', 'sofr-volume'];
+
+function getViewFromPath() {
+  var path = window.location.pathname.replace(/^\\//, '');
+  return VALID_VIEWS.indexOf(path) !== -1 ? path : 'corridor';
+}
+
+function setActiveTab(view) {
+  document.querySelectorAll('.tab').forEach(function(t) {
+    if (t.dataset.view === view) {
+      t.classList.add('active');
+    } else {
+      t.classList.remove('active');
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+  currentView = getViewFromPath();
+  setActiveTab(currentView);
   initDateRange();
   initTabs();
   await loadData();
+  renderChart();
+});
+
+window.addEventListener('popstate', function() {
+  currentView = getViewFromPath();
+  setActiveTab(currentView);
   renderChart();
 });
 
@@ -456,9 +481,10 @@ function setDateRange(range) {
 function initTabs() {
   document.querySelectorAll('.tab').forEach((tab) => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
-      tab.classList.add('active');
       currentView = tab.dataset.view;
+      var newPath = currentView === 'corridor' ? '/' : '/' + currentView;
+      history.pushState({ view: currentView }, '', newPath);
+      setActiveTab(currentView);
       renderChart();
     });
   });

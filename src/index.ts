@@ -10,9 +10,23 @@ const app = new Hono<{ Bindings: Env }>();
 // Enable CORS for API routes
 app.use('/api/*', cors());
 
-// Serve static assets
+// Valid view paths
+const VIEWS = new Set([
+  'corridor', 'sofr-percentile', 'sofr-bands',
+  'sofr-rrp', 'effr-rrp', 'rrp-volume', 'sofr-volume',
+]);
+
+// Serve dashboard for / and all view paths
 app.get('/', (c) => {
   return c.html(HTML);
+});
+
+app.get('/:view', (c) => {
+  const view = c.req.param('view');
+  if (VIEWS.has(view)) {
+    return c.html(HTML);
+  }
+  return c.notFound();
 });
 
 app.get('/styles.css', (c) => {

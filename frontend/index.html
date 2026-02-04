@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOFR Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>SOFR Tracker</h1>
+      <div class="controls">
+        <div class="date-range">
+          <label>
+            Range:
+            <select id="rangeSelect">
+              <option value="1M">1 Month</option>
+              <option value="3M" selected>3 Months</option>
+              <option value="6M">6 Months</option>
+              <option value="1Y">1 Year</option>
+              <option value="2Y">2 Years</option>
+              <option value="custom">Custom</option>
+            </select>
+          </label>
+          <div id="customDates" class="hidden">
+            <input type="date" id="startDate">
+            <span>to</span>
+            <input type="date" id="endDate">
+            <button id="applyDates">Apply</button>
+          </div>
+        </div>
+        <div class="status" id="status">Loading...</div>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-view="corridor">Rate Corridor</button>
+      <button class="tab" data-view="sofr-percentile">SOFR Percentile Spread</button>
+      <button class="tab" data-view="sofr-bands">SOFR Percentile Bands</button>
+      <button class="tab" data-view="sofr-rrp">SOFR-RRP Spread</button>
+      <button class="tab" data-view="effr-rrp">EFFR-RRP Spread</button>
+      <button class="tab" data-view="rrp-volume">RRP Volume</button>
+      <button class="tab" data-view="sofr-volume">SOFR Volume</button>
+    </nav>
+
+    <main>
+      <div id="chartContainer">
+        <div id="chart"></div>
+        <div id="legend"></div>
+      </div>
+      <div id="tooltip" class="tooltip hidden"></div>
+    </main>
+
+    <footer>
+      <div class="sources">
+        Data: <a href="https://www.newyorkfed.org/markets/reference-rates" target="_blank">NY Fed</a> |
+        <a href="https://fred.stlouisfed.org/" target="_blank">FRED</a>
+      </div>
+      <div class="markers-legend">
+        <span class="marker quarter-end"></span> Quarter End
+        <span class="marker tax-deadline"></span> Tax Deadline
+      </div>
+    </footer>
+  </div>
+
+  <script src="charts.js"></script>
+</body>
+</html>

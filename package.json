@@ -1,0 +1,23 @@
+{
+  "name": "sofr-tracker",
+  "version": "1.0.0",
+  "description": "SOFR rates dashboard with Fed rate corridor tracking",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create sofr-tracker-db",
+    "db:migrate": "wrangler d1 execute sofr-tracker-db --file=./src/db/schema.sql",
+    "db:migrate:local": "wrangler d1 execute sofr-tracker-db --local --file=./src/db/schema.sql",
+    "sync": "wrangler dev --test-scheduled",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241205.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^3.99.0"
+  }
+}
